@@ -5,11 +5,37 @@
 var express = require('express');
 var app = express();
 
+var GoogleImages = require('google-images');
+
+// DEVELOPMENT
+if (!process.env.PORT) {
+  var env = require('./env');
+}
+
 // we've started you off with Express, 
 // but feel free to use whatever libs or frameworks you'd like through `package.json`.
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'));
+
+app.get("/api/imagesearch/:searchTerm", function (req, res) {
+    
+    var searchTerm = req.params.searchTerm
+    if (searchTerm) {
+      var client = new GoogleImages(process.env.CSE_ID, process.env.API_KEY);
+
+      var pageNum = req.query.offset || 1
+      client.search(searchTerm, {page: pageNum})
+        .then(images => res.json(images.map(image => ({
+          url: image.url,
+          alt: image.description,
+          pageUrl: image.parentPage
+        }))))
+      //res.json(results)
+    } else {
+      res.end('Please give a search term.')
+    }
+});
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", function (request, response) {
@@ -34,6 +60,6 @@ var dreams = [
 ];
 
 // listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
+var listener = app.listen(process.env.PORT || '3939', function () {
   console.log('Your app is listening on port ' + listener.address().port);
 });
